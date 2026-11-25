@@ -89,7 +89,7 @@ export function FileTree() {
 					<li>
 						<Glyph name="folder" />
 						<code>history</code>
-						<span>{t('Every dated capture')}</span>
+						<span>{t('Every dated memory')}</span>
 					</li>
 				</ul>
 			</li>

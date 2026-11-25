@@ -27,7 +27,7 @@ export function ContentLayout({ title, lead, children }: { title: string; lead?:
 const privacySummary: Record<string, { glyph: GlyphName; status: string }> = {
 	'Preferences on this device': { glyph: 'disk', status: 'Stays on this device' },
 	'Optional web diagnostics': { glyph: 'view', status: 'Off by default' },
-	'Diagnostics in the Minecraft mod': { glyph: 'code', status: 'Nothing sent before pairing' },
+	'Diagnostics in the Minecraft mod': { glyph: 'code', status: 'Nothing sent before you connect' },
 	'Account and gallery': { glyph: 'lock', status: 'Private by default' },
 	'Links and deletion': { glyph: 'link', status: 'You control the link' },
 	'Mod download list': { glyph: 'download', status: 'No account needed' },

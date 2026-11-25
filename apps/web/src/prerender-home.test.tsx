@@ -16,8 +16,8 @@ test('the prerendered home page holds the whole site and the film markup, with n
 	expect(html).toContain('26.3 expérimentale')
 	expect(html).toContain('Fabric, Forge, NeoForge · solo et serveurs · bêta')
 	expect(html).not.toContain('Pas besoin d’être admin · Ton monde reste intact')
-	// under the server-closing clip: the capture stays on the PC, sending it is the player's choice
-	expect(html).toContain('La capture est enregistrée sur ton ordinateur.')
+	// under the server-closing clip: the memory stays on the PC, sending it is the player's choice
+	expect(html).toContain('Le souvenir reste sur ton ordi.')
 	expect(html).toContain('Appuie sur M → Prendre un souvenir.')
 	// the pictures of the steps and of the share and server-closing sections: real footage without captions repeating their section, the clips as poster frames only
 	expect(html).not.toContain('mm-clip__caption')
@@ -99,8 +99,8 @@ test('the landing’s facts and cards follow a language change made by the film�
 		'Minecraft Java 1.18.2, 1.19.2, 1.20.1, 1.21.1, 1.21.11 · 26.3 experimental · Fabric, Forge, NeoForge · single player and servers · beta',
 	])
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('The mod keeps a 3D copy of the spot where you play.')
-	expect(text).toContain('How do I keep my base?')
+	expect(text).toContain('The mod saves the spot where you play.')
+	expect(text).toContain('Before your server closes')
 	expect(text).toContain('Press M → Take a memory. Or go AFK for 5 minutes: the mod takes one for you.')
 	expect(text).toContain('Show your base to your friends')
 	document.body.innerHTML = ''

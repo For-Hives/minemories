@@ -8,7 +8,7 @@ export interface LegalSection {
 export const legalContent: Record<'privacy' | 'terms' | 'legal', { title: string; sections: readonly LegalSection[] }> =
 	{
 		privacy: {
-			title: 'Your memories, your choices',
+			title: 'Privacy',
 			sections: [
 				{
 					heading: 'Preferences on this device',
@@ -20,7 +20,15 @@ export const legalContent: Record<'privacy' | 'terms' | 'legal', { title: string
 				},
 				{
 					heading: 'Diagnostics in the Minecraft mod',
-					body: 'Error reports from the mod are on by default, but nothing is sent until you connect the game to your account. If you turn them off, that choice is kept, even if you reconnect or change API. Reports hold only versions, the step that failed and a short technical trace. They never include messages, full crash logs, links, local paths, credentials, coordinates, seeds, world, player or server names, or capture contents. The mod keeps at most eight reports, for at most seven days. Turning reports off, or changing account or API, empties that queue; turning them off also asks the server to delete this device’s reports (if it can’t be reached, its retention period applies). To turn them off: M → Settings → Privacy → Diagnostics.',
+					body: 'The mod’s error reports are on by default, but nothing is sent until you connect the game to your account.',
+					items: [
+						'What is sent: the versions, the step that failed and a short technical trace.',
+						'What is never sent: messages, full crash logs, links, paths on your computer, passwords, coordinates, seeds, world, player or server names, or what your memories hold.',
+						'The mod keeps at most eight reports, for at most seven days.',
+						'If you turn them off, that choice stays, even after you reconnect or change server.',
+						'Turning them off, or changing account or server, deletes the reports still waiting. Turning them off also asks our server to delete this device’s reports.',
+						'To turn them off: M → Settings → Privacy → Diagnostics.',
+					],
 				},
 				{
 					heading: 'Account and gallery',

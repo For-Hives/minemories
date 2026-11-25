@@ -25,11 +25,10 @@ export function InfoPage({ title, children }: { title: string; children: ReactNo
 }
 
 const notThis = [
-	'Not playable',
-	'Not editable',
-	'Not a backup',
-	'One area, not the whole world',
-	'Java on a computer only',
+	'You can’t play in it or edit it.',
+	'It isn’t a backup of your world.',
+	'It saves one area, not the whole world.',
+	'Only Minecraft Java, on a computer.',
 ]
 type Cell = 'Yes' | 'No' | (string & {})
 /** The ways to keep a build, compared on what a player asks first. Dated: the other tools change. */
@@ -41,11 +40,11 @@ const comparison: { columns: string[]; rows: Array<[string, Cell, Cell, Cell, Ce
 		'Playable again',
 	],
 	rows: [
-		['Minemories', 'Yes', 'Yes, in 3D', 'Yes, if captured before', 'No'],
+		['Minemories', 'Yes', 'Yes, in 3D', 'Yes, if you captured it before', 'No'],
 		['Screenshots, video', 'Yes', 'Yes, one view', 'Yes', 'No'],
 		['Replay Mod', 'Yes', 'No, it needs Minecraft and the mod', 'Yes', 'No'],
 		['World copy (WorldTools, ZIP)', 'With the admin’s consent', 'No', 'Yes', 'Yes'],
-		['BlueMap', 'No, it runs on the server', 'Yes', 'No, unless hosted separately', 'No'],
+		['BlueMap', 'No, it runs on the server', 'Yes', 'No, unless you host it yourself', 'No'],
 	],
 }
 
@@ -86,13 +85,12 @@ function Comparison() {
 export function ConceptPage() {
 	const { t } = useI18n()
 	return (
-		<InfoPage title="Your Minecraft world, ready to visit in 3D">
+		<InfoPage title="Your Minecraft world in 3D">
 			<p className="ex-lead">
-				{t(
-					'Minemories is a Minecraft Java mod that keeps a 3D copy of the area around you: your house, your village, your group’s base. You can walk around it in your browser, even after the server is gone.'
-				)}
+				{t('Minemories is a Minecraft Java mod. It saves the area around you in 3D.')}{' '}
+				{t('You walk around it in your browser, even after the server is gone.')}
 			</p>
-			<h2>{t('What it isn’t')}</h2>
+			<h2>{t('Its limits')}</h2>
 			<ul className="ex-list">
 				{notThis.map(label => (
 					<li key={label}>{t(label)}</li>
@@ -109,32 +107,20 @@ export function ConceptPage() {
 export function HowItWorksPage() {
 	const { t } = useI18n()
 	return (
-		<InfoPage title="From Minecraft world to 3D memory">
+		<InfoPage title="How it works">
 			<ol className="ex-steps">
 				<li>
 					<h2>{t('1. You play')}</h2>
-					<p>
-						{t('Press M → Take a memory.')}{' '}
-						{t(
-							'Or go AFK for 5 minutes, even on the pause screen: the mod takes one by itself (one every 4 hours at most).'
-						)}{' '}
-						{t('About 32 blocks around you, adjusted to what you built.')}
-					</p>
+					<p>{t('Press M → Take a memory. Or go AFK for 5 minutes: the mod takes one for you.')}</p>
 					<RadiusMap initial={32} />
 				</li>
 				<li>
 					<h2>{t('2. The file stays with you')}</h2>
-					<p>
-						{t('Each memory is a GLB file, textures and lights included, in the export folder of your home folder.')}
-					</p>
+					<p>{t('Each memory is a 3D file on your computer.')}</p>
 					<FileTree />
 				</li>
 				<li>
 					<h2>{t('3. You connect the game, if you want')}</h2>
-					<p>
-						{t('On the site, create an account and get a 6-digit code.')}{' '}
-						{t('In Minecraft: M → type the code → Connect.')} {t('Your memories then go to your private gallery.')}
-					</p>
 					<ol className="ex-chain">
 						<li>
 							<Glyph name="key" />
@@ -151,17 +137,14 @@ export function HowItWorksPage() {
 					</ol>
 				</li>
 				<li>
-					<h2>{t('4. You show it, if you want')}</h2>
-					<p>
-						{t('Download a postcard, or create a link to one memory or to a whole world.')}{' '}
-						{t('You stop sharing whenever you want.')}
-					</p>
+					<h2>{t('4. You share it, if you want')}</h2>
+					<p>{t('Download a postcard, or send a link.')}</p>
 					<p className="ex-line">{t(linkWarning)}</p>
 					<ShareDemo />
 				</li>
 			</ol>
 			<p>
-				<Link to="/safety">{t('Is Minemories safe?')} →</Link>
+				<Link to="/safety">{t('Safety and privacy')} →</Link>
 			</p>
 			<FaqLink group={pageFaqGroups.howItWorks} />
 		</InfoPage>

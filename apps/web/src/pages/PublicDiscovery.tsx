@@ -330,8 +330,8 @@ export function PublicationPanel({
 
 	const fieldId = `publication-${memory.id}`
 	return (
-		<section ref={panel} aria-label={t('Public publication')} className="mm-publication">
-			<h4>{t('Publish in the public gallery')}</h4>
+		<section ref={panel} aria-label={t('Make public')} className="mm-publication">
+			<h4>{t('Make public')}</h4>
 			{status && <StateCard status={status} card={card} />}
 			{loading && <p className="mm-publication-loading">{t('Checking…')}</p>}
 			{failed && (
@@ -389,16 +389,10 @@ export function PublicationPanel({
 				/>
 				<label className="mm-publication-consent">
 					<input type="checkbox" checked={consent} onChange={event => setConsent(event.currentTarget.checked)} />
-					<span>
-						{t(
-							'I want this GLB and its thumbnail to be accessible to everyone after moderation, including captured text and textures.'
-						)}
-					</span>
+					<span>{t('Everyone can see this memory once we approve it, text on signs included.')}</span>
 				</label>
 				<p className="mm-publication-note">
-					{t(
-						'Every new submission replaces the publication and requires moderation again. Link sharing stays separate.'
-					)}
+					{t('Sending it again replaces the public version, and we check it again. Your share links don’t change.')}
 				</p>
 				{error && <p role="alert">{t(error)}</p>}
 				<p role="status" className="mm-publication-notice">

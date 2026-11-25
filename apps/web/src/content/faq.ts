@@ -42,53 +42,46 @@ export const questions = {
 	ban: {
 		question: 'Can I get banned?',
 		answer: [
-			'The mod runs only in your game and sends nothing to the game server: it reads what your game shows, like a screenshot.',
-			'Some servers ban any mod that isn’t on their list: check their rules.',
+			'The mod runs only in your game and sends nothing to the server.',
+			'Some servers ban every mod that isn’t on their list: check their rules.',
 		],
 	},
 	virus: {
 		question: 'Is it a virus?',
-		answer: [
-			'No. It’s a .jar file for Minecraft: only download it from this site or our CurseForge page.',
-			'Its SHA-256 checksum is shown on the downloads page.',
-		],
+		answer: ['No. Only download it from this site or our CurseForge page.'],
 		link: { to: '/safety#verifier', label: 'Check your file' },
 	},
 	sauvegarde: {
 		question: 'Does it back up my world?',
-		answer: ['No. It’s a 3D copy to look at, not to play in.', 'Keep your Minecraft backup too.'],
+		answer: [
+			'No. It writes a separate 3D copy to look at and never touches your world.',
+			'Keep your Minecraft backup too.',
+		],
 	},
 	minemories: {
 		question: 'What is Minemories?',
-		answer: [
-			'A Minecraft Java mod that keeps a 3D copy of the area around you.',
-			'Open it in your browser and share it with a link.',
-		],
+		answer: ['A Minecraft Java mod that saves the area around you in 3D, to walk around in your browser.'],
 		link: { to: '/concept', label: 'The concept' },
 	},
 	bluemap: {
 		question: 'How is it different from BlueMap?',
 		answer: [
 			'BlueMap maps a whole server and is installed on the server.',
-			'Minemories keeps one spot, from your own game, without asking the admin.',
+			'Minemories keeps one spot, from your own game, without the admin.',
 		],
 	},
 	litematica: {
 		question: 'Isn’t it just Litematica?',
 		answer: [
-			'No. Litematica saves the blocks of a build so you can rebuild it block by block, and you open it in Minecraft with the mod.',
-			'Minemories keeps what your build looks like, textures and lights included, and you walk around it in your browser, without Minecraft.',
-			'One is for copying a base, the other for revisiting it and showing it off: they go well together.',
+			'No. Litematica saves the blocks, so you can rebuild.',
+			'Minemories saves the look, so you can walk around it in your browser.',
+			'The two go well together.',
 		],
-	},
-	rejouer: {
-		question: 'Can I play in it again?',
-		answer: ['No. To play again, keep your world save.'],
 	},
 	'si-minemories-ferme': {
 		question: 'What if Minemories shuts down?',
 		answer: [
-			'Your memories also stay on your computer, in the export folder, and every memory in your gallery downloads as a GLB file.',
+			'Your memories also stay on your computer, and you can download each one from your gallery.',
 			'You don’t depend on us.',
 		],
 	},
@@ -101,7 +94,7 @@ export const questions = {
 		answer: [
 			'Fabric, Forge or NeoForge, depending on your version.',
 			'On Fabric, add Fabric API.',
-			'In {minecraft}, Quilt works with the Fabric JAR.',
+			'In {minecraft}, Quilt works with the Fabric file.',
 		],
 		values: { minecraft: quiltTested.minecraft },
 		link: { to: '/downloads', label: 'Downloads' },
@@ -116,58 +109,51 @@ export const questions = {
 	},
 	serveur: {
 		question: 'Do I need to install anything on the server?',
-		answer: ['No, it’s client-side: it only goes on the player’s computer.'],
+		answer: ['No. It only goes on your computer, and it works on any server.'],
 	},
 	'tout-le-monde': {
 		question: 'Does everyone need to install it?',
 		answer: ['No. One person is enough to capture the group’s base.', 'The others just open the link.'],
 	},
-	'monde-modifie': {
-		question: 'Does it change my world?',
-		answer: ['No. The mod reads what your game shows and writes a separate file.'],
-	},
+
 	compte: {
 		question: 'Do I need an account?',
 		answer: [
-			'To revisit your memory in 3D in the browser, yes.',
-			'Without an account, it stays as a GLB file on your computer, to open in Blender.',
+			'To walk around your memory in the browser, yes.',
+			'Without one, the file stays on your computer and opens in Blender.',
 		],
 		link: { to: '/guides/minecraft-blender', label: 'Open my build in Blender' },
 	},
 	sodium: {
 		question: 'Does it work with Sodium, Iris or shaders?',
 		answer: [
-			'Tested with Sodium and Iris in 1.21.1.',
-			'The memory keeps the blocks and their textures, not the shader effect.',
-			'OptiFine is not tested.',
+			'Sodium and Iris, yes (tested in 1.21.1), but the memory doesn’t keep the shader effect.',
+			'OptiFine isn’t tested.',
 		],
 	},
 	'prendre-un-souvenir': {
 		question: 'How do I take a memory?',
 		answer: [
 			'Press M → Take a memory.',
-			'Otherwise, the mod takes one on its own when you stay AFK for 5 minutes, even with the game paused (at most one every 4 hours).',
+			'Or stay AFK for 5 minutes, even paused: the mod takes one for you, at most every 4 hours.',
 		],
 	},
 	taille: {
 		question: 'How big is the area?',
-		answer: [
-			'About 32 blocks around you, adjusted to what you built.',
-			'For a big base: M → the gear next to Take a memory → Memory size.',
-		],
+		answer: ['About 32 blocks around you, adjusted to what you built.', 'For a big base: M → the gear → Memory size.'],
 	},
 	'sous-sols': {
 		question: 'Are basements included?',
 		answer: [
-			'Yes, down to 5 blocks below the lowest point you visited, and further down if a build is connected to it.',
-			'And it’s adjustable: M → the gear next to Take a memory → Memory size → Depth below you.',
+			'Yes, 5 blocks below the lowest point you visited, and more if a build goes deeper.',
+			'Adjust it in M → the gear → Memory size → Depth below you.',
 		],
 	},
 	mods: {
 		question: 'Does it work with my mods?',
 		answer: [
 			'Tested with Create, Mekanism and Cobblemon in 1.21.1.',
-			'Some blocks with special rendering may be missing: take a small test memory first.',
+			'Some blocks with unusual rendering may be missing, so take a small test memory first.',
 		],
 	},
 	joueurs: {
@@ -175,7 +161,7 @@ export const questions = {
 		answer: ['Yes, frozen with their skin, like the animals.', 'Ask them before you share.'],
 	},
 	'souvenirs-auto': {
-		question: 'Can I turn off auto memories?',
+		question: 'Can I turn off AFK captures?',
 		answer: ['Yes: M → Auto memories.'],
 	},
 	'ou-sont-mes-souvenirs': {
@@ -183,43 +169,31 @@ export const questions = {
 		answer: [
 			'In the game: M → My memories.',
 			'The files are in the export folder of your home folder (for example C:\\Users\\<you>\\export).',
-			'You can change it in M → Settings → Memories.',
 		],
 	},
 	'vieux-monde': {
 		question: 'Server already gone?',
 		answer: [
-			'Without a copy of the world, there’s nothing left to capture.',
-			'If you have the world as a ZIP, open it in single player in a compatible version and take your memory there.',
+			'If you have the world as a ZIP, open it in single player and take your memory there.',
+			'Without a copy, there’s nothing left to capture.',
 		],
 		link: { to: '/server-closing', label: 'What if my server shuts down?' },
 	},
-	'sur-un-serveur': {
-		question: 'Does it work on a server?',
-		answer: ['Yes, it captures what your game shows.', 'Follow the server’s rules.'],
-	},
 	connecter: {
 		question: 'How do I connect the game?',
-		answer: [
-			'On the site, open your gallery and get a code.',
-			'In Minecraft: M → type the code → Connect.',
-			'The code lasts 5 minutes and works once.',
-		],
+		answer: ['Open your gallery on the site and get a code.', 'In Minecraft: M → type the code → Connect.'],
 		link: { to: '/gallery', label: 'My gallery' },
 	},
 	'souvenirs-d-avant': {
 		question: 'What about memories taken before I connected?',
 		answer: ['M → My memories → Send this memory.'],
 	},
-	'regarder-un-lien': {
-		question: 'Do I need Minecraft or an account to view a link?',
-		answer: ['No, a browser is enough.'],
-	},
+
 	'ce-que-voit-le-lien': {
 		question: 'What does someone with my link see?',
 		answer: [
-			'The 3D scene, its name and its date.',
-			'The link also shows the coordinates, the dimension, the biome, the world name, the seed (in single player) or the server name or address.',
+			'Your base in 3D, its name and its date.',
+			'Also the coordinates, dimension, biome and world name, plus the seed in single player or the server’s name and address.',
 		],
 	},
 	'arreter-le-partage': {
@@ -227,8 +201,8 @@ export const questions = {
 		answer: ['Yes, in your gallery: Stop sharing.', 'It blocks new visits, not a copy already made.'],
 	},
 	'galerie-publique': {
-		question: 'How do I publish in the public gallery?',
-		answer: ['Pick a memory → Publish in the public gallery.', 'We review it before it appears.'],
+		question: 'How do I make a memory public?',
+		answer: ['Open a memory in your gallery → Make public.', 'We check it before it shows up.'],
 		link: { to: '/explore', label: 'Public gallery' },
 	},
 	droit: {
@@ -237,17 +211,18 @@ export const questions = {
 	},
 	fichier: {
 		question: 'Can I get the file back?',
-		answer: ['Yes, every memory in your gallery downloads as a GLB file, and the viewer makes HD postcards.'],
+		answer: ['Yes. Download any memory from your gallery to open it in Blender.', 'You can also save HD postcards.'],
 	},
 	place: {
 		question: 'How much space?',
 		answer: ['2 GiB per account during the beta.', 'The trash counts too.'],
 	},
 	'envoi-automatique': {
-		question: 'Does the mod upload everything on its own?',
+		question: 'Does the mod send my memories without asking?',
 		answer: [
 			'Nothing is sent until you connect the game.',
-			'After that, your memories go to your private gallery, with cleaned-up error reports you can turn off in M → Settings → Privacy.',
+			'After that, your memories go to your private gallery.',
+			'Error reports, with nothing personal, turn off in M → Settings → Privacy.',
 		],
 		link: { to: '/privacy', label: 'Privacy' },
 	},
@@ -255,29 +230,28 @@ export const questions = {
 		question: 'Who can see my kid’s memories?',
 		answer: [
 			'Nobody, by default.',
-			'Only people with a link your kid created, or everyone if they publish a memory and it’s accepted after review.',
+			'Only people with a link from your kid, or everyone if your kid makes a memory public and we accept it.',
 		],
 		link: { to: '/safety', label: 'Is it safe?' },
 	},
 	'tout-supprimer': {
 		question: 'How do I delete everything?',
 		answer: [
-			'A memory: from your gallery (30 days in the trash).',
-			'Your account: write to us, the contact address is coming soon.',
-			'We then delete the account, its memories, its links and its devices.',
+			'A memory: from your gallery. It stays 30 days in the trash.',
+			'Your account: write to us through the legal notice, and we delete everything.',
 		],
+		link: { to: '/legal', label: 'About and legal notice' },
 	},
 	code: {
 		question: 'The code doesn’t work?',
-		answer: ['It expires after 5 minutes and works only once.', 'Generate another one.', 'Your local file is safe.'],
+		answer: ['It lasts 5 minutes and works only once.', 'Get a new one in your gallery.'],
 	},
 	installeur: {
 		question: 'The loader installer won’t open?',
 		answer: [
-			'It needs Java: install Temurin first.',
-			'Then right-click the installer → Open with → Java.',
-			'On macOS or Linux, open a terminal in its folder and type java -jar followed by the file name.',
-			'Don’t lower your security settings to get it running.',
+			'It needs Java: install Temurin, then right-click the installer → Open with → Java.',
+			'On macOS or Linux, type java -jar and the file name in a terminal.',
+			'Don’t turn off your security to run it.',
 		],
 	},
 	'mod-absent': {
@@ -290,8 +264,8 @@ export const questions = {
 	plantage: {
 		question: 'The game crashes on launch?',
 		answer: [
-			'Check that the JAR matches your version and your loader, and that Fabric API is there on Fabric.',
-			'To go back, take the Minemories JAR out of mods. Never delete your world to fix it.',
+			'Check that the mod file matches your version and loader, with Fabric API on Fabric.',
+			'To undo, take it out of mods. Never delete your world.',
 		],
 	},
 	'touche-m': {
@@ -307,10 +281,7 @@ export const questions = {
 	},
 	'mot-de-passe': {
 		question: 'Forgot your password?',
-		answer: [
-			'On the sign-in page, choose “Forgot your password?”.',
-			'Type your email or your Minecraft name: you get a link to choose a new one.',
-		],
+		answer: ['On the sign-in page, choose “Forgot your password?”.'],
 		link: { to: '/login/forgot', label: 'Choose a new password' },
 	},
 } satisfies Record<string, FaqEntry>
@@ -332,13 +303,13 @@ export const faqGroups: Array<{ id: FaqGroupId; label: string; ids: QuestionId[]
 	{
 		id: 'before-installing',
 		label: 'Before installing',
-		ids: ['bedrock', 'versions', 'ban', 'virus', 'sauvegarde', 'rejouer'],
+		ids: ['bedrock', 'versions', 'ban', 'virus', 'sauvegarde'],
 	},
 	{ id: 'the-mod', label: 'The mod', ids: ['minemories', 'bluemap', 'litematica', 'si-minemories-ferme', 'qui'] },
 	{
 		id: 'installing',
 		label: 'Installing',
-		ids: ['loader', 'launcher', 'serveur', 'tout-le-monde', 'monde-modifie', 'compte', 'sodium'],
+		ids: ['loader', 'launcher', 'serveur', 'tout-le-monde', 'compte', 'sodium'],
 	},
 	{
 		id: 'capturing',
@@ -352,7 +323,6 @@ export const faqGroups: Array<{ id: FaqGroupId; label: string; ids: QuestionId[]
 			'souvenirs-auto',
 			'ou-sont-mes-souvenirs',
 			'vieux-monde',
-			'sur-un-serveur',
 		],
 	},
 	{
@@ -361,7 +331,6 @@ export const faqGroups: Array<{ id: FaqGroupId; label: string; ids: QuestionId[]
 		ids: [
 			'connecter',
 			'souvenirs-d-avant',
-			'regarder-un-lien',
 			'ce-que-voit-le-lien',
 			'arreter-le-partage',
 			'galerie-publique',

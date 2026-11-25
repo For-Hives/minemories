@@ -102,8 +102,6 @@ test('the demo explorer can be read in English', async () => {
 			</MemoryRouter>
 		</I18nProvider>
 	)
-	await waitFor(() =>
-		expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('A little visit, just to see.')
-	)
+	await waitFor(() => expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Demo gallery'))
 	expect(screen.getByRole('searchbox', { name: 'Search places' })).toBeTruthy()
 })
