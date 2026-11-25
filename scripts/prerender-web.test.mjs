@@ -19,6 +19,7 @@ const pages = {
 	},
 	'/explore': { title: 'Gallery', description: 'Public memories', indexable: false },
 	'/share/link': { title: 'A place & you', description: 'Turn <around>', indexable: false },
+	'/login': { title: 'Sign in · Site', description: 'Your space', indexable: false },
 }
 const languages = [
 	{ id: 'en', tag: 'en-US', ogLocale: 'en_US', prefix: '' },
@@ -41,6 +42,7 @@ const entry = {
 		return { title, description }
 	},
 	sharedLinkPath: '/share/link',
+	titledPrivatePaths: ['/login'],
 	languages,
 	loadLanguages: async () => undefined,
 	pagePath: (path, locale) => {
@@ -266,4 +268,24 @@ test('an indexable page without an updated date stops the build: the sitemap wou
 		publicMetadata: [{ path: '/faq', title: 'FAQ', description: 'Answers', indexable: true }],
 	}
 	await assert.rejects(prerenderWeb(directory, undated), /without an updated date: \/faq/)
+})
+
+test('sign-in pages get the private shell with their own title in every language, not the share card', async t => {
+	const directory = await mkdtemp(join(tmpdir(), 'minemories-private-titles-'))
+	t.after(() => rm(directory, { recursive: true, force: true }))
+	await writeFile(join(directory, 'index.html'), template)
+	await prerenderWeb(directory, entry)
+	const english = await readFile(join(directory, 'login/app.html'), 'utf8')
+	assert.ok(english.includes('<title>Sign in · Site</title>'))
+	assert.ok(english.includes('<meta name="description" content="Your space" />'))
+	assert.ok(english.includes('<meta name="robots" content="noindex,nofollow" />'))
+	assert.ok(english.includes('<div id="app"></div>'), 'still the client shell')
+	assert.ok(!english.includes('A place'))
+	assert.ok(!english.includes('og:'))
+	const french = await readFile(join(directory, 'fr/login/app.html'), 'utf8')
+	assert.ok(french.includes('<html lang="fr-FR">'))
+	assert.ok(french.includes('<title>fr: Sign in · Site</title>'))
+	// An entry without the list (older builds) still prerenders.
+	await writeFile(join(directory, 'index.html'), template)
+	await assert.doesNotReject(prerenderWeb(directory, { ...entry, titledPrivatePaths: undefined }))
 })
