@@ -92,11 +92,12 @@ test('the prerendered table already links every published JAR, with the Java col
 	expect(document.querySelector('a[href="/faq#before-installing"]')?.textContent).toBe(
 		'Questions\u00a0: Avant d’installer\u00a0→'
 	)
-	expect(page).toContain('son empreinte SHA-256 doit être celle affichée ici')
+	expect(page).toContain('Sur Fabric, ajoute Fabric API. En 1.21.1, Quilt marche avec le fichier Fabric.')
+	expect(page).not.toMatch(/JAR|empreinte/)
 	// The CurseForge app comes first, above the table, as one line: it installs Fabric API too.
 	const callout = document.querySelector('.mm-dl-catalog') as HTMLElement
 	expect(callout.tagName).toBe('P')
-	expect(callout.textContent).toBe('Minemories sur CurseForge\u00a0→ L’app installe Minemories et ce qu’il lui faut.')
+	expect(callout.textContent).toBe('Ou installe-le avec l’app CurseForge\u00a0→')
 	expect(callout.querySelector('a')?.getAttribute('href')).toBe(
 		'https://www.curseforge.com/minecraft/mc-mods/minemories'
 	)
@@ -115,7 +116,7 @@ test('once the index is read, cells name the exact version, size and checksum; t
 		within(table)
 			.getAllByRole('columnheader')
 			.map(header => header.textContent)
-	).toEqual(['Minecraft', 'Java', 'NeoForge', 'Fabric+ Fabric API', 'Forge'])
+	).toEqual(['Minecraft', 'Java', 'NeoForge', 'Fabric', 'Forge'])
 	const link = await within(table).findByRole('link', {
 		name: 'Télécharger Minemories pour Minecraft 1.21.1 avec NeoForge (0.2.0)',
 	})
@@ -135,11 +136,11 @@ test('once the index is read, cells name the exact version, size and checksum; t
 	expect(within(recent).getAllByText('Pas encore publié')).toHaveLength(2)
 	const old = screen.getByRole('rowheader', { name: /1\.18\.2/ }).closest('tr') as HTMLElement
 	expect(within(old).getAllByText('Non disponible pour cette version')).toHaveLength(2)
-	expect(screen.getByText(/Installe Fabric API à part/).textContent).toContain('Quilt 0.30.1')
-	expect(screen.getByRole('link', { name: 'Les nouveautés de Minemories' }).getAttribute('href')).toBe('/versions')
-	expect(
-		screen.getByRole('link', { name: 'Pas sûr\u00a0? Le guide te pose deux questions.' }).getAttribute('href')
-	).toBe('/installation')
+	expect(screen.getByText(/Quilt marche avec le fichier Fabric/).textContent).toContain('En 1.21.1')
+	expect(screen.getByRole('link', { name: 'Nouveautés' }).getAttribute('href')).toBe('/versions')
+	expect(screen.getByRole('link', { name: 'Tu hésites\u00a0? Suis le guide.' }).getAttribute('href')).toBe(
+		'/installation'
+	)
 	// The answers are not copied here: one link leads to the questions asked before installing.
 	expect(screen.queryByRole('heading', { name: 'Quelles versions\u00a0?' })).toBeNull()
 	expect(screen.getByRole('link', { name: 'Questions\u00a0: Avant d’installer\u00a0→' }).getAttribute('href')).toBe(
@@ -147,20 +148,13 @@ test('once the index is read, cells name the exact version, size and checksum; t
 	)
 })
 
-test('every published cell opens the guide with its version and loader already picked', async () => {
+test('a cell holds the download only: the guide is one link under the table', async () => {
 	serve(modIndexFixture(published))
 	mount()
 	const recent = screen.getByRole('rowheader', { name: /1\.21\.11/ }).closest('tr') as HTMLElement
 	await within(recent).findByRole('link', { name: /\(0\.3\.0-beta\.1\)/ })
-	const guided = within(recent).getByRole('link', { name: 'Installation guidée' })
-	expect(guided.getAttribute('href')).toBe('/installation?minecraft=1.21.11&loader=fabric')
-	fireEvent.click(guided)
-	await screen.findByRole('heading', { name: 'Installer Minemories' })
-	// The questions are answered: the guide opens on the download of that very JAR.
-	expect(screen.getByRole('heading', { name: 'Télécharge le mod' })).toBeTruthy()
-	expect(screen.getByRole('link', { name: 'Télécharger pour Minecraft 1.21.11 · Fabric' }).getAttribute('href')).toBe(
-		latestDownloadUrl('1.21.11', 'fabric')
-	)
+	expect(within(recent).queryByRole('link', { name: 'Installation guidée' })).toBeNull()
+	expect(document.querySelectorAll('a[href="/installation"]')).toHaveLength(1)
 })
 
 test('while the index loads or fails, the cells keep the newest-JAR links, and a failure offers a retry', async () => {

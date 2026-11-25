@@ -46,9 +46,7 @@ export function LegalNotice() {
 			</section>
 			<section aria-labelledby="legal-host">
 				<h2 id="legal-host">{t('Hosting')}</h2>
-				<p>
-					{t('The site, the API, the database, the captures and the mod files are hosted on a server rented from:')}
-				</p>
+				<p>{t('The site, its data, the memories and the mod files are hosted on a server rented from:')}</p>
 				<dl className="mm-legal-card">
 					<Fact label={t('Name')}>Contabo GmbH</Fact>
 					<Fact label={t('Address')}>
@@ -71,7 +69,7 @@ export function LegalNotice() {
 				<p>
 					<Rich
 						message={
-							'For a question, a request about your personal data, or to report a capture or a shared link, contact the publisher by phone, by post or through {site}.'
+							'To ask a question or about your personal data, or to report a memory or a link, contact the publisher by phone, by post or through {site}.'
 						}
 						slots={{
 							site: (
@@ -83,7 +81,6 @@ export function LegalNotice() {
 					/>
 				</p>
 				<p>
-					{t('How Minemories handles your data is explained on the privacy page.')}{' '}
 					<Link className="mc-link" to="/privacy">
 						{t('Read the privacy policy')}
 					</Link>

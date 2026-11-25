@@ -214,7 +214,7 @@ test('the menus list pages only, the landing’s too: no group of the page’s o
 	).toEqual(['/concept', '/how-it-works', '/sharing', '/explore'])
 	expect(document.querySelector('a[href^="#"]')).toBeNull()
 	fireEvent.click(trigger('Help'))
-	expect(screen.getByRole('link', { name: 'Found a bug? Tell us on GitHub' }).getAttribute('rel')).toBe('noopener')
+	expect(screen.getByRole('link', { name: 'Report a bug' }).getAttribute('rel')).toBe('noopener')
 })
 
 /** A screen whose main pointer is a mouse (or a phone's touch screen, `fine = false`): the bar asks it before opening on hover. */
@@ -432,7 +432,7 @@ test('the phones’ panel: a modal dialog with the groups, the account and the l
 	expect(within(dialog).getByRole('button', { name: 'Help' }).getAttribute('aria-expanded')).toBe('true')
 	expect(within(dialog).getByRole('link', { name: 'FAQ' }).getAttribute('aria-current')).toBe('page')
 	fireEvent.click(within(dialog).getByRole('button', { name: 'Product' }))
-	expect(within(dialog).getByRole('link', { name: 'What is Minemories?' })).toBeTruthy()
+	expect(within(dialog).getByRole('link', { name: 'The concept' })).toBeTruthy()
 	expect(groups.length).toBeGreaterThan(0)
 	expect(within(dialog).getByRole('button', { name: /^Language / })).toBeTruthy()
 	expect(within(dialog).getByRole('link', { name: 'Sign in' }).getAttribute('href')).toBe('/login')
@@ -472,7 +472,7 @@ test('the phones’ panel: a modal dialog with the groups, the account and the l
 	expect(screen.queryByRole('dialog')).toBeNull()
 	// a link closes it and goes to its page; the button closes it too
 	fireEvent.click(button)
-	fireEvent.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'What’s coming next' }))
+	fireEvent.click(within(screen.getByRole('dialog')).getByRole('link', { name: 'Roadmap' }))
 	expect(screen.getByTestId('where').textContent).toBe('/roadmap')
 	expect(screen.queryByRole('dialog')).toBeNull()
 	fireEvent.click(button)

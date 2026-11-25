@@ -25,7 +25,7 @@ const blocked = /gratuit|open source|la plus utilisée|validé|1\.18\.2 → |\bv
 
 test('/server-closing: three options, the Aternos and admin anchors, then one link to its FAQ group', () => {
 	mount(<ServerClosingPage />, 'fr', '/server-closing')
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Ton serveur ferme. Ta base, elle, peut rester.')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Garde ta base avant que ton serveur ferme')
 	for (const option of [
 		'Demander le monde à l’admin',
 		'Faire une copie jouable',
@@ -33,7 +33,7 @@ test('/server-closing: three options, the Aternos and admin anchors, then one li
 	])
 		expect(screen.getByRole('heading', { name: option })).toBeTruthy()
 	expect(document.getElementById('aternos')?.textContent).toContain('Aternos')
-	expect(document.getElementById('admin')?.textContent).toContain('Rien à installer de ton côté')
+	expect(document.getElementById('admin')?.textContent).toContain('Tu n’installes rien.')
 	// the answers live on /faq; the page links to its group and leaves the install button to the bar
 	expect(document.querySelectorAll('.ex-faq-item')).toHaveLength(0)
 	expect(screen.getByRole('link', { name: 'Questions\u00a0: Capturer\u00a0→' }).getAttribute('href')).toBe(
@@ -79,7 +79,7 @@ test('a German visitor reads the page and the announcement in German, with the E
 	await loadLocale('de')
 	mount(<ServerClosingPage />, 'de')
 	expect(
-		await screen.findByRole('heading', { level: 1, name: 'Dein Server schließt. Deine Basis kann bleiben.' })
+		await screen.findByRole('heading', { level: 1, name: 'Behalte deine Basis, bevor dein Server schließt' })
 	).toBeTruthy()
 	const quotes = [...document.querySelectorAll('.ex-announce blockquote')]
 	expect(quotes[0]?.textContent).toContain('drück M → Erinnerung festhalten')
@@ -89,7 +89,7 @@ test('a German visitor reads the page and the announcement in German, with the E
 
 test('/safety: the parents box, the checksum fold under #verifier, what goes online, what a link shows and how to delete', () => {
 	mount(<SafetyPage />, 'fr', '/safety')
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Est-ce que Minemories est sûr\u00a0?')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Sécurité')
 	const parents = screen.getByRole('region', { name: 'Pour les parents, en 5 lignes' })
 	expect(within(parents).getAllByRole('listitem')).toHaveLength(5)
 	expect(parents.textContent).toContain('M → Souvenirs auto, M → Réglages → Confidentialité')
@@ -111,16 +111,17 @@ test('/safety: the parents box, the checksum fold under #verifier, what goes onl
 			.getAllByRole('columnheader')
 			.map(cell => cell.textContent)
 	).toEqual(['Avant de connecter le jeu', 'Après avoir connecté le jeu'])
-	expect(table.textContent).toContain('sa graine (en solo)')
-	expect(table.textContent).toContain('au plus 8 en attente, gardés 7 jours au plus')
+	expect(table.textContent).toContain('Tes souvenirs, avec quand et où tu les as pris.')
+	expect(table.textContent).toContain('Des rapports d’erreur, sans rien de personnel.')
+	expect(within(table).getByRole('link', { name: 'Confidentialité\u00a0→' }).getAttribute('href')).toBe('/privacy')
 	expect(document.body.textContent).toContain(
 		'Le lien montre où est ta base, et sur quel serveur. Réfléchis avant de le poster en public.'
 	)
 	expect(document.body.textContent).toContain('Arrêter le partage bloque les nouvelles visites')
 	expect(document.body.textContent).toContain('30 jours de corbeille')
-	expect(document.body.textContent).toContain('l’adresse de contact arrive bientôt')
+	expect(document.body.textContent).toContain('écris-nous via les mentions légales')
+	expect(screen.getByRole('link', { name: 'Mentions légales\u00a0→' }).getAttribute('href')).toBe('/legal')
 	expect(screen.queryByRole('link', { name: 'Installer le mod' })).toBeNull()
-	expect(screen.getByRole('link', { name: 'Confidentialité' }).getAttribute('href')).toBe('/privacy')
 	expect(document.body.textContent).not.toMatch(blocked)
 })
 
@@ -139,7 +140,7 @@ test('/guides/minecraft-blender: the real export commands, the folder, the Blend
 	])
 	expect(document.body.textContent).toContain('/minemories export prend 128 blocs autour de toi.')
 	expect(document.body.textContent).toContain('un rayon de 2 à 128')
-	expect(document.body.textContent).toContain('capture.glb est le dernier')
+	expect(document.body.textContent).toContain('capture.glb est le plus récent, les autres sont dans history.')
 	expect(document.body.textContent).toContain('Fichier → Importer → glTF 2.0 (.glb/.gltf)')
 	expect(document.body.textContent).toContain('terrain, decor, fluids, block_entities, entities')
 	expect(document.querySelectorAll('.ex-faq-item')).toHaveLength(0)
@@ -163,7 +164,7 @@ test('the three pages are prerendered, indexable and dated, the guide as an arti
 	expect(renderPage('/server-closing', 'fr')).toContain('id="admin"')
 	expect(renderPage('/safety', 'fr')).toContain('id="verifier"')
 	expect(metadataFor('/server-closing', 'fr').title).toBe('Serveur Minecraft qui ferme\u00a0: garde tes constructions')
-	expect(metadataFor('/safety', 'fr').title).toBe('Minemories est-il sûr\u00a0? Mod, enfants et vie privée')
+	expect(metadataFor('/safety', 'fr').title).toBe('Sécurité de Minemories\u00a0: le mod, les enfants et la vie privée')
 	expect(metadataFor('/guides/minecraft-blender', 'fr').title).toBe(
 		'Exporter une construction Minecraft vers Blender (GLB)'
 	)

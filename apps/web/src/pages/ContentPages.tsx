@@ -132,7 +132,7 @@ export function LegalPage({ kind }: { kind: keyof typeof legalContent }) {
 export function NotFoundPage() {
 	const { t } = useI18n()
 	return (
-		<ContentLayout title={t('Page not found')} lead={t('This address does not lead to a Minemories page.')}>
+		<ContentLayout title={t('Page not found')} lead={t('This page doesn’t exist.')}>
 			<Link className={buttonOutline} to="/">
 				{t('Back home')}
 			</Link>

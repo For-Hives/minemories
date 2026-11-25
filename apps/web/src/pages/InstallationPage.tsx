@@ -27,14 +27,9 @@ import './installation.css'
 
 function GuidedWay() {
 	return (
-		<>
-			<strong>
-				<T message={'Guided installation'} />
-			</strong>
-			<span>
-				<T message={'A few quick questions, then one simple step at a time.'} />
-			</span>
-		</>
+		<strong>
+			<T message={'Guided installation'} />
+		</strong>
 	)
 }
 
@@ -59,7 +54,7 @@ function Welcome({
 						<T message={'Install Minemories'} />
 					</h1>
 					<p className="install-lead">
-						<T message={'Minecraft Java on a computer · about 10 minutes · your worlds stay untouched.'} />
+						<T message={'For Minecraft Java on a computer. It takes about 10 minutes and doesn’t touch your worlds.'} />
 					</p>
 				</div>
 				<div className="install-hero-art">
@@ -84,22 +79,16 @@ function Welcome({
 						<strong>
 							<T message={'With the {app} app'} params={{ app: catalog.name }} />
 						</strong>
-						<span>
-							<T message={'The app installs Minemories and what it needs.'} />
-						</span>
 					</a>
 				))}
 				<Link className="install-way" to="/downloads">
 					<strong>
 						<T message={'See all downloads'} />
 					</strong>
-					<span>
-						<T message={'Every Minecraft version and loader in one table, ready to download.'} />
-					</span>
 				</Link>
 			</div>
 			<p className="install-view-only">
-				<T message={'Just here to view a shared memory? Open its link: there is nothing to install.'} />{' '}
+				<T message={'A friend sent you a link? Just open it.'} />{' '}
 				<a href="#aide">
 					<T message={'Need help?'} />
 				</a>
@@ -240,7 +229,7 @@ export function InstallationPage() {
 			{!enhanced && <StaticGuide system={guide.system} onSystem={system => update({ system })} />}
 			<InstallationHelp step={active ? guide.step : null} />
 			<p className="install-caption install-final-note">
-				<T message={'Minemories is experimental: start with a test world and keep your local files.'} />
+				<T message={'The mod is experimental: try it on a test world first.'} />
 			</p>
 		</article>
 	)

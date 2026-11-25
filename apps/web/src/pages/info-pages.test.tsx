@@ -224,9 +224,9 @@ test('the legal page says who makes Minemories and leaves out internal launch no
 			</MemoryRouter>
 		</I18nProvider>
 	)
-	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Qui fait Minemories')
+	expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Mentions légales')
 	const text = document.body.textContent ?? ''
-	expect(text).toContain('Le code est public sur GitHub\u00a0; le mod se trouve sur la page Téléchargements.')
+	expect(text).toContain('Son code est public sur GitHub.')
 	expect(text).not.toMatch(/lancement commercial|versions du mod sont disponibles dans le dépôt/)
 	// The legal notice: the publisher and the host with their registered details, then how to reach the publisher.
 	expect(screen.getAllByRole('heading', { level: 2 }).map(heading => heading.textContent)).toEqual([

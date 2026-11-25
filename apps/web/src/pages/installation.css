@@ -490,8 +490,8 @@ html.mm-cjk:not([data-mc-font="read"]) .mm-site .installation .install-hero h1 {
 .installation .install-way {
 	display: flex;
 	flex-direction: column;
-	gap: var(--ds-sp-3);
-	min-height: 160px;
+	justify-content: center;
+	min-height: 96px;
 	padding: var(--ds-sp-6);
 	border: 0;
 	background: var(--night-2);
@@ -508,7 +508,6 @@ html.mm-cjk:not([data-mc-font="read"]) .mm-site .installation .install-hero h1 {
 .installation .install-way,
 .installation a.install-way:not(.mc-btn),
 .installation a.install-way:not(.mc-btn):hover,
-.installation .install-way span,
 .installation .install-way strong {
 	color: var(--text);
 	text-decoration: none;
@@ -533,11 +532,6 @@ html.mm-cjk:not([data-mc-font="read"]) .mm-site .installation .install-hero h1 {
 .installation .install-way strong {
 	font: 400 var(--ds-fs-h3) / var(--ds-lh-h3) var(--f-ui);
 	text-shadow: var(--ds-text-shadow-2);
-}
-
-.installation .install-way span {
-	color: var(--text-2);
-	font: 400 var(--ds-rd-fs) / var(--ds-rd-lh) var(--ds-f-text);
 }
 
 /* --- The guide: one screen, one main action ------------------------------------------------------------------------------------------------- */

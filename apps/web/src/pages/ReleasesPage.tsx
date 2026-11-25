@@ -67,10 +67,7 @@ export function ReleasesPage() {
 	const published = (version: string) => releases.find(release => release.version === version)?.published
 	const [latest, ...previous] = history
 	return (
-		<ContentLayout
-			title={t('What’s new in Minemories')}
-			lead={t('Every Minemories version and what it changed, with dates.')}
-		>
+		<ContentLayout title={t('What’s new')}>
 			{latest && <Latest release={latest} published={published(latest.version)} />}
 			{previous.length > 0 && (
 				<>
