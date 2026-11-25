@@ -147,8 +147,14 @@ export function App() {
 		return () => window.clearTimeout(timeout)
 	}, [notice])
 	return (
-		// Every page renders in its URL's language; the browser's language is only suggested.
-		<I18nProvider key={route.prefix} initialLocale={route.locale} suggestLocale onLocaleChange={changeLanguage}>
+		// Every page renders in its URL's language. The browser's language is only suggested on the unprefixed (English)
+		// pages: a /fr/… URL is already a language someone chose, so it is never second-guessed.
+		<I18nProvider
+			key={route.prefix}
+			initialLocale={route.locale}
+			suggestLocale={!route.prefix}
+			onLocaleChange={changeLanguage}
+		>
 			<AppContext.Provider value={context}>
 				<BrowserRouter basename={route.prefix || '/'}>
 					<RouteMetadata />
