@@ -3,10 +3,12 @@ import { createHash } from 'node:crypto'
 import {
 	type CaptureIdentity,
 	captureTimeKey,
+	type SharedWorld,
 	type TemporalFrame,
 	type TemporalWindow,
 	TIMELAPSE_PAGE_FRAMES,
 	temporalIdentity,
+	thumbnailDataUrl,
 	WORLD_EVOLUTION_FRAMES,
 	type WorldEvolution,
 } from '@minemories/api-contract'
@@ -137,6 +139,18 @@ function describe(source: Source) {
 
 type Stored = NonNullable<ReturnType<typeof describe>>['frame']
 
+/** The small icon the gallery shows for a capture; never its larger thumbnail, which a long world would multiply. */
+function iconOf(metadataJson: string | null): string | null {
+	let icon: unknown = null
+	try {
+		icon = (JSON.parse(metadataJson ?? '{}') as { icon?: unknown }).icon
+	} catch {
+		return null
+	}
+	const parsed = thumbnailDataUrl.safeParse(icon)
+	return parsed.success ? parsed.data : null
+}
+
 /** Owner-scoped projection of actual captures, independent of the physical GLB/chunk representation. */
 export class TimelapseIndex {
 	constructor(private readonly database: Database) {}
@@ -227,15 +241,7 @@ export class TimelapseIndex {
 		return this.database
 			.transaction(() => {
 				const stored = JSON.parse(seed.capture_json) as Stored
-				const totals = this.database
-					.query(`SELECT COUNT(*) AS frames,SUM(m.size) AS bytes FROM timelapse_index i
-			 JOIN memories m ON m.id=i.memory_id WHERE i.user_id=? AND i.world_key=? AND m.deleted_at IS NULL`)
-					.get(userId, seed.world_key) as { frames: number; bytes: number }
-				const rows = this.database
-					.query(`SELECT i.*,m.name,m.size FROM timelapse_index i JOIN memories m ON m.id=i.memory_id
-			 WHERE i.user_id=? AND i.world_key=? AND m.deleted_at IS NULL
-			 ORDER BY i.time_key DESC,i.memory_id DESC LIMIT ?`)
-					.all(userId, seed.world_key, WORLD_EVOLUTION_FRAMES) as Selected[]
+				const { totals, rows } = this.worldRows(userId, seed.world_key)
 				return {
 					worldKey: seed.world_key,
 					name: stored.seriesName,
@@ -243,11 +249,51 @@ export class TimelapseIndex {
 					scope: stored.scope,
 					totalFrames: totals.frames,
 					totalBytes: totals.bytes,
-					frames: rows.reverse().map(row => this.frame(row)),
+					frames: rows.map(row => this.frame(row)),
 					truncated: totals.frames > rows.length,
 				}
 			})
 			.immediate()
+	}
+
+	/**
+	 * The same world for a visitor holding its link: the owner's captures, each named after the place (never its file)
+	 * with its small icon. Null once the world has no live capture left.
+	 */
+	sharedWorld(userId: string, worldKey: string, place: string | null): SharedWorld | null {
+		while (this.pass(userId).processed > 0);
+		return this.database
+			.transaction(() => {
+				const { totals, rows } = this.worldRows(userId, worldKey)
+				const newest = rows.at(-1)
+				if (!newest) return null
+				const stored = JSON.parse(newest.capture_json) as Stored
+				const name = place ?? stored.seriesName
+				return {
+					name,
+					dimension: stored.dimension,
+					scope: stored.scope,
+					totalFrames: totals.frames,
+					totalBytes: totals.bytes,
+					frames: rows.map(row => ({ ...this.frame(row), name, image: iconOf(row.metadata_json) })),
+					truncated: totals.frames > rows.length,
+				}
+			})
+			.immediate()
+	}
+
+	/** A world's live captures, the newest `WORLD_EVOLUTION_FRAMES`, oldest first, with the totals over all of them. */
+	private worldRows(userId: string, worldKey: string) {
+		const totals = this.database
+			.query(`SELECT COUNT(*) AS frames,SUM(m.size) AS bytes FROM timelapse_index i
+			 JOIN memories m ON m.id=i.memory_id WHERE i.user_id=? AND i.world_key=? AND m.deleted_at IS NULL`)
+			.get(userId, worldKey) as { frames: number; bytes: number }
+		const rows = this.database
+			.query(`SELECT i.*,m.name,m.size,m.metadata_json FROM timelapse_index i JOIN memories m ON m.id=i.memory_id
+			 WHERE i.user_id=? AND i.world_key=? AND m.deleted_at IS NULL
+			 ORDER BY i.time_key DESC,i.memory_id DESC LIMIT ?`)
+			.all(userId, worldKey, WORLD_EVOLUTION_FRAMES) as (Selected & { metadata_json: string | null })[]
+		return { totals, rows: rows.reverse() }
 	}
 
 	/** The evolving world a snapshot belongs to; NOT_FOUND when it has no temporal identity. */

@@ -4,7 +4,7 @@ import { act } from 'react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { I18nProvider } from '../i18n/I18n'
-import { INVITE_DELAY_MS, SharePage } from './SharePage'
+import { SharePage } from './SharePage'
 
 const mocks = vi.hoisted(() => ({
 	get: vi.fn(),
@@ -221,36 +221,6 @@ test('a storage outage on the file is a network error too, not a revoked link', 
 	expect(screen.getByRole('button', { name: 'Réessayer' })).toBeTruthy()
 })
 
-test('a world link welcomes the visitor with the real count, then invites them after 10 s', async () => {
-	const snapshots = ['a', 'b', 'c'].map((id, index) => ({ id, at: `2026-0${index + 1}-01T12:00:00Z` }))
-	vi.mocked(fetch).mockImplementation(async url =>
-		String(url).includes('/file') ? glb() : sharedMeta({ id: 'c', snapshots })
-	)
-	mount('/share/world-token-0123456789', false)
-	await waitFor(() => expect(mocks.load).toHaveBeenCalledTimes(1))
-	// Nothing shows over the scene before it is on screen.
-	expect(document.querySelector('[data-share]')).toBeNull()
-	vi.useFakeTimers()
-	try {
-		sceneReady()
-		const welcome = document.querySelector('[data-share="welcome"]')
-		expect(welcome?.textContent).toBe(
-			'Un lieu Minecraft en 3D, partagé avec toi. Fais glisser pour tourner autour. 3 souvenirs de ce lieu. Fais glisser le curseur pour le voir changer.'
-		)
-		expect(screen.queryByRole('link', { name: /Toi aussi/ })).toBeNull()
-		act(() => vi.advanceTimersByTime(INVITE_DELAY_MS - 1))
-		expect(screen.queryByRole('link', { name: /Toi aussi/ })).toBeNull()
-		act(() => vi.advanceTimersByTime(1))
-		expect(screen.getByRole('link', { name: 'Tu veux la même chose pour ta base\u00a0? →' }).getAttribute('href')).toBe(
-			'/installation?src=share'
-		)
-		expect(document.querySelector('[data-share="welcome"]')).toBeNull()
-		expect(screen.queryByRole('link', { name: 'Voir d’autres lieux' })).toBeNull()
-	} finally {
-		vi.useRealTimers()
-	}
-})
-
 test('a single memory link says no count, and the first gesture on the scene brings the invitation', async () => {
 	vi.mocked(fetch).mockImplementation(async url => (String(url).includes('/file') ? glb() : sharedMeta()))
 	mount('/share/single-token-0123456789', false)
@@ -284,18 +254,17 @@ test('a candidate under review is never called reviewed and carries no invitatio
 	expect(document.body.textContent).not.toContain('relu avant publication')
 })
 
-test('a link carrying a view opens that snapshot, hour, weather, layers and camera, once', async () => {
-	const snapshots = ['a', 'b'].map((id, index) => ({ id, at: `2026-0${index + 1}-01T12:00:00Z` }))
+test('a link carrying a view opens that hour, weather, layers and camera, once', async () => {
 	vi.mocked(fetch).mockImplementation(async url =>
-		String(url).includes('/file') ? glb() : sharedMeta({ id: 'b', snapshots, metadata: { dayTime: 1000 } })
+		String(url).includes('/file') ? glb() : sharedMeta({ metadata: { dayTime: 1000 } })
 	)
-	mount('/share/world-token-0123456789?cam=1,2,3&at=4,5,6&time=17:30&weather=rain&hide=entities&snap=b', false)
+	mount('/share/view-token-0123456789?cam=1,2,3&at=4,5,6&time=17:30&weather=rain&hide=entities', false)
 	await waitFor(() => expect(mocks.view).toHaveBeenCalledWith([1, 2, 3], [4, 5, 6]))
-	expect(fetch).toHaveBeenNthCalledWith(
-		1,
-		'http://example.test/api/shared/world-token-0123456789?snapshot=b',
-		expect.anything()
-	)
+	// The link is asked about once: its answer is reused for the file, so the opening is counted once.
+	expect(vi.mocked(fetch).mock.calls.map(call => String(call[0]))).toEqual([
+		'http://example.test/api/shared/view-token-0123456789',
+		'http://example.test/api/shared/view-token-0123456789/file?variant=meshopt',
+	])
 	expect(mocks.hide).toHaveBeenCalledWith('entities', false)
 	// The link's hour comes after the capture's own.
 	expect(mocks.minutes.mock.calls.at(-1)).toEqual([1050])
@@ -313,8 +282,9 @@ test('a link carrying a view opens that snapshot, hour, weather, layers and came
 		at: '2,64,3',
 		weather: 'rain',
 		hide: 'entities',
-		snap: 'b',
 	})
+	// A capture link has no snapshot to point at.
+	expect(copied.searchParams.has('snap')).toBe(false)
 	expect(await screen.findByText('Lien de cette vue copié.')).toBeTruthy()
 })
 

@@ -429,6 +429,7 @@
 	"Right-click": "마우스 오른쪽 버튼을 클릭하세요.",
 	"Role": "역할",
 	"SHARED MEMORY": "공유 메모리",
+	"SHARED WORLD": "공유된 월드",
 	"Save": "저장",
 	"Save status": "상태 저장",
 	"Save this estimate": "이 추정치를 저장하세요",
@@ -627,6 +628,7 @@
 	"Waiting": "대기 중",
 	"Loaded": "로드됨",
 	"Archived: open it alone to restore it": "보관됨: 복원하려면 따로 여세요",
+	"Archived: restore it to see it": "보관됨: 보려면 복원하세요",
 	"Could not load": "로드할 수 없음",
 	"Not loaded": "로드 안 됨",
 	"Captures of this world": "이 월드의 캡처",
@@ -1167,7 +1169,7 @@
 	"The scene could not be loaded. Try again in a moment.": "장면을 불러오지 못했어요. 잠시 후 다시 시도하세요.",
 	"A Minecraft place in 3D, shared with you. Drag to turn around it.": "당신과 공유된 3D Minecraft 장소예요. 드래그해서 둘러보세요.",
 	"Published by its author, reviewed before publication.": "작성자가 공개했고, 공개 전에 검토했어요.",
-	"Drag the slider to watch it change.": "슬라이더를 움직여 변화를 보세요.",
+	"Press Play to watch it change.": "재생을 눌러 변화를 보세요.",
 	"Want the same for your own base?": "내 기지도 이렇게 남기고 싶다면?",
 	"Keep your own base in 3D too": "내 기지도 3D로 남겨 보세요",
 	"See other places": "다른 장소 보기",
@@ -1640,5 +1642,6 @@
 	"Avatar saved.": "아바타를 저장했습니다.",
 	"Avatar removed.": "아바타를 삭제했습니다.",
 	"Edit name": "이름 수정",
-	"You sign in with this name or your email.": "이 이름이나 이메일로 로그인합니다."
+	"You sign in with this name or your email.": "이 이름이나 이메일로 로그인합니다.",
+	"This shared world could not be loaded. Try again.": "이 공유 월드를 불러오지 못했어요. 다시 시도하세요."
 }

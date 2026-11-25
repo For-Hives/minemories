@@ -429,6 +429,7 @@
 	"Right-click": "Right-click",
 	"Role": "Role",
 	"SHARED MEMORY": "SHARED MEMORY",
+	"SHARED WORLD": "SHARED WORLD",
 	"Save": "Save",
 	"Save status": "Save status",
 	"Save this estimate": "Save this estimate",
@@ -627,6 +628,7 @@
 	"Waiting": "Waiting",
 	"Loaded": "Loaded",
 	"Archived: open it alone to restore it": "Archived: open it alone to restore it",
+	"Archived: restore it to see it": "Archived: restore it to see it",
 	"Could not load": "Could not load",
 	"Not loaded": "Not loaded",
 	"Captures of this world": "Captures of this world",
@@ -1167,7 +1169,7 @@
 	"The scene could not be loaded. Try again in a moment.": "The scene could not be loaded. Try again in a moment.",
 	"A Minecraft place in 3D, shared with you. Drag to turn around it.": "A Minecraft place in 3D, shared with you. Drag to turn around it.",
 	"Published by its author, reviewed before publication.": "Published by its author, reviewed before publication.",
-	"Drag the slider to watch it change.": "Drag the slider to watch it change.",
+	"Press Play to watch it change.": "Press Play to watch it change.",
 	"Want the same for your own base?": "Want the same for your own base?",
 	"Keep your own base in 3D too": "Keep your own base in 3D too",
 	"See other places": "See other places",
@@ -1640,5 +1642,6 @@
 	"Avatar saved.": "Avatar saved.",
 	"Avatar removed.": "Avatar removed.",
 	"Edit name": "Edit name",
-	"You sign in with this name or your email.": "You sign in with this name or your email."
+	"You sign in with this name or your email.": "You sign in with this name or your email.",
+	"This shared world could not be loaded. Try again.": "This shared world could not be loaded. Try again."
 }

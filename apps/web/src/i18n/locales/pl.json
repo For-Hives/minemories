@@ -429,6 +429,7 @@
 	"Right-click": "Kliknij prawym przyciskiem myszy",
 	"Role": "Rola",
 	"SHARED MEMORY": "WSPÓLNA PAMIĘĆ",
+	"SHARED WORLD": "WSPÓLNY ŚWIAT",
 	"Save": "Zapisz",
 	"Save status": "Zapisz stan",
 	"Save this estimate": "Zapisz to oszacowanie",
@@ -627,6 +628,7 @@
 	"Waiting": "Oczekuje",
 	"Loaded": "Wczytano",
 	"Archived: open it alone to restore it": "W archiwum: otwórz osobno, aby przywrócić",
+	"Archived: restore it to see it": "W archiwum: przywróć, aby zobaczyć",
 	"Could not load": "Nie udało się wczytać",
 	"Not loaded": "Nie wczytano",
 	"Captures of this world": "Zrzuty tego świata",
@@ -1167,7 +1169,7 @@
 	"The scene could not be loaded. Try again in a moment.": "Nie udało się wczytać sceny. Spróbuj ponownie za chwilę.",
 	"A Minecraft place in 3D, shared with you. Drag to turn around it.": "Miejsce z Minecraft w 3D, udostępnione tobie. Przeciągnij, aby je obrócić.",
 	"Published by its author, reviewed before publication.": "Opublikowane przez autora, sprawdzone przed publikacją.",
-	"Drag the slider to watch it change.": "Przesuń suwak, aby zobaczyć, jak się zmienia.",
+	"Press Play to watch it change.": "Naciśnij Odtwórz, aby zobaczyć, jak się zmienia.",
 	"Want the same for your own base?": "Chcesz tak samo dla swojej bazy?",
 	"Keep your own base in 3D too": "Zachowaj też swoją bazę w 3D",
 	"See other places": "Zobacz inne miejsca",
@@ -1640,5 +1642,6 @@
 	"Avatar saved.": "Awatar zapisany.",
 	"Avatar removed.": "Awatar usunięty.",
 	"Edit name": "Zmień nazwę",
-	"You sign in with this name or your email.": "Logujesz się tą nazwą albo swoim e-mailem."
+	"You sign in with this name or your email.": "Logujesz się tą nazwą albo swoim e-mailem.",
+	"This shared world could not be loaded. Try again.": "Nie udało się wczytać tego wspólnego świata. Spróbuj ponownie."
 }

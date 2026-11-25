@@ -23,7 +23,7 @@ must be finite and below 1e8; the hour must be a real one; enums and layers are 
 `[A-Za-z0-9_-]{1,128}`. Anything invalid is dropped, never an error. Coordinates are rounded to the centimetre.
 
 Coordinates are in the **shown capture's own space**: `ViewerScene.currentView()` removes a world layer's offset,
-so a view taken in a composed timelapse world opens on the same spot when `/share` loads that snapshot alone.
+so the same view opens on the same spot in the composed world and on that capture loaded alone.
 
 ## Where links come from
 
@@ -35,8 +35,10 @@ so a view taken in a composed timelapse world opens on the same spot when `/shar
 
 ## Applying a view
 
-`SharePage` reads the view once. Hidden layers are applied before the first load, so they never flash in. `snap`
-picks the first snapshot. After the first load, the hour replaces the capture's own and the camera replaces the
-default framing (`ViewerScene.applyView`). Picking another snapshot later keeps the usual framing. Weather and
-lighting start the studio; a link's lighting applies to that visit only and does not overwrite the visitor's
-remembered choice. Owner pages (`/viewer`) do not read view parameters yet.
+`SharePage` reads the view once. On a capture link, hidden layers are applied before the first load, so they never
+flash in; after it, the hour replaces the capture's own and the camera replaces the default framing
+(`ViewerScene.applyView`). On a world link, which opens the composed world (see `world-evolution.md`), `snap` picks
+the capture the world opens on when the viewer loads it; once that capture is drawn and framed, the hidden layers,
+the hour and the camera apply, and moving to another capture keeps the usual glide. Weather and lighting start the
+studio; a link's lighting applies to that visit only and does not overwrite the visitor's remembered choice. Owner
+pages (`/viewer`) do not read view parameters yet.

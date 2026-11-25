@@ -6,6 +6,7 @@ import { captureStorageContract } from './capture-storage'
 import { captureTime } from './capture-time'
 import { diagnosticsContract } from './diagnostics'
 import { discoveryContract } from './discovery'
+import { thumbnailDataUrl } from './thumbnail'
 import { timelapseContract } from './timelapse'
 
 export {
@@ -61,6 +62,8 @@ export {
 	roadmapResponse,
 } from './roadmap'
 export {
+	type SharedWorld,
+	type SharedWorldFrame,
 	type TemporalFrame,
 	type TemporalWindow,
 	TIMELAPSE_PAGE_FRAMES,
@@ -68,10 +71,7 @@ export {
 	type WorldEvolution,
 } from './timelapse'
 
-export const thumbnailDataUrl = z
-	.string()
-	.max(96_000)
-	.regex(/^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]*={0,2}$/)
+export { thumbnailDataUrl }
 
 /**
  * The gallery's server (or single-player world) a capture belongs to: a world by name and seed, else a server by
