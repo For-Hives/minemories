@@ -18,27 +18,10 @@ import { InstallationPage } from './pages/InstallationPage'
 import { ReleasesPage } from './pages/ReleasesPage'
 import { RoadmapPage } from './pages/RoadmapPage'
 import { SharingPage } from './pages/SharingPage'
-import {
-	headFor,
-	metadataFor,
-	publicMetadata,
-	sharedLinkPath,
-	siteOrigin,
-	socialImage,
-	titledPrivatePaths,
-} from './route-metadata'
+import { headFor, metadataFor, publicMetadata, sharedLinkPath, siteOrigin, socialImage } from './route-metadata'
 import { structuredDataFor } from './structured-data'
 
-export {
-	headFor,
-	metadataFor,
-	publicMetadata,
-	sharedLinkPath,
-	siteOrigin,
-	socialImage,
-	structuredDataFor,
-	titledPrivatePaths,
-}
+export { headFor, metadataFor, publicMetadata, sharedLinkPath, siteOrigin, socialImage, structuredDataFor }
 /** Every language of the site: English unprefixed (the default), each other one under its prefix (/fr, /pt-br…). */
 export const languages = localeOptions.map(option => ({
 	id: option.id,
